@@ -23,15 +23,11 @@ class CustomUserManager(BaseUserManager):
     def create_employer(self, phone_number=None, otp=None, email=None, password=None, **extra_fields):
         extra_fields.setdefault('role', 'employer')
 
-        if phone_number and otp:
-            user = self.model(phone_number=phone_number, **extra_fields)
-            user.set_password(otp)
-        elif email and password:
+
+        if email and password:
             email = self.normalize_email(email)
             user = self.model(email=email, **extra_fields)
             user.set_password(password)
-        else:
-            raise ValueError("Provide either (phone_number and otp) OR (email and password) to create an employer.")
 
         user.save(using=self._db)
         return user
@@ -67,12 +63,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    bio = models.TextField()
+    bio = models.TextField(null=True,blank=True)
+    first_name = models.CharField(max_length=50,blank=True,null=True)
+    last_name = models.CharField(max_length=50,blank=True,null=True)
 
-    USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = []  # You can add 'email' if needed
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []  
 
     objects = CustomUserManager()
 
     def __str__(self):
         return f"{self.phone_number or self.email} - {self.role}"
+    
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+

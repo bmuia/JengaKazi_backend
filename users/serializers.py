@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import PhoneOtp
-
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 User = get_user_model()
 
 
@@ -28,24 +28,12 @@ class JobSeekerRegistrationSerializer(serializers.ModelSerializer):
 
 
 class EmployerRegistrationSerializer(serializers.ModelSerializer):
-    otp = serializers.CharField(write_only=True, required=False)
     password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ['phone_number', 'email', 'otp', 'password']
+        fields = ['email', 'password','role']
 
-    def validate(self, attrs):
-        phone = attrs.get('phone_number')
-        otp = attrs.get('otp')
-        email = attrs.get('email')
-        password = attrs.get('password')
-
-        if phone and otp:
-            return attrs
-        elif email and password:
-            return attrs
-        raise serializers.ValidationError("Provide either (phone_number + otp) OR (email + password) for employer registration.")
 
     def create(self, validated_data):
         phone = validated_data.get('phone_number', None)
@@ -54,10 +42,9 @@ class EmployerRegistrationSerializer(serializers.ModelSerializer):
         password = validated_data.get('password', None)
 
         user = User.objects.create_employer(
-            phone_number=phone,
-            otp=otp,
             email=email,
-            password=password
+            password=password,
+            role="employer"
         )
         return user
 
@@ -72,4 +59,6 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
         instance.bio = validated_data.get("bio", instance.bio)
         instance.save()
         return instance
+    
+
 

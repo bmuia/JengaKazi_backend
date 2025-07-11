@@ -6,7 +6,7 @@ from django.conf import settings
 from .models import PhoneOtp
 
 def send_otp(phone_number):
-    username = "jengakazi"
+    username = "sandbox"
     api_key = settings.API_KEY
     africastalking.initialize(username, api_key)
     

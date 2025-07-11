@@ -5,6 +5,7 @@ from .views import (
     JobListView,
     JobApplicationCreateView,
     JobApplicantListView,
+    EmployerJobListView,
 )
 
 urlpatterns = [
@@ -12,5 +13,7 @@ urlpatterns = [
     path('jobs/<int:pk>/', JobDetailView.as_view(), name='job-detail'),
     path('feed/jobs/', JobListView.as_view(), name='job-feed'),
     path('jobs/<int:job_id>/apply/', JobApplicationCreateView.as_view(), name='apply-to-job'),
-    path('jobs/<int:job_id>/applicants/', JobApplicantListView.as_view(), name='job-applicants'),
+    path('jobs/<int:job_id>/applicants/', JobApplicantListView.as_view(), name='job-applicants'),\
+    path('employer/jobs/', EmployerJobListView.as_view(), name='employer-job-list'),
+
 ]

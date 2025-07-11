@@ -49,27 +49,12 @@ class JobSeekerRegistrationView(APIView):
 
 class EmployerRegistrationView(APIView):
     def post(self, request):
-        phone_number = request.data.get("phone_number")
-        otp = request.data.get("otp")
-
-        if phone_number and otp:
-            try:
-                phone_otp = PhoneOtp.objects.get(phone_number=phone_number)
-            except PhoneOtp.DoesNotExist:
-                return Response({'error': 'Phone number not found'}, status=404)
-
-            if phone_otp.otp != otp:
-                return Response({'error': 'Invalid OTP'}, status=400)
-
         serializer = EmployerRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            if phone_number and otp:
-                phone_otp.delete()
             return Response({'message': 'Employer registered successfully'}, status=201)
-
         return Response(serializer.errors, status=400)
-        
+
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -85,8 +70,22 @@ class LoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        # Login via Phone + OTP (for job seeker OR employer)
-        if phone_number and otp:
+        # 🔓 HACKATHON-STYLE LOGIN: Just Phone Number (for Job Seekers)
+        if phone_number and not otp:
+            try:
+                user = CustomUser.objects.get(phone_number=phone_number)
+            except CustomUser.DoesNotExist:
+                return Response({"error": "User does not exist"}, status=404)
+
+            tokens = get_tokens_for_user(user)
+            return Response({
+                "message": "Login successful via phone (no OTP)",
+                "tokens": tokens,
+                "role": user.role
+            })
+
+        # ✅ Standard Phone + OTP (if needed later)
+        elif phone_number and otp:
             try:
                 phone_otp = PhoneOtp.objects.get(phone_number=phone_number)
             except PhoneOtp.DoesNotExist:
@@ -108,7 +107,7 @@ class LoginView(APIView):
                 "role": user.role
             })
 
-        # Login via Email + Password (for employers)
+        # ✅ Email + Password Login (Employer)
         elif email and password:
             user = authenticate(request, email=email, password=password)
             if user:
@@ -122,6 +121,8 @@ class LoginView(APIView):
                 return Response({"error": "Invalid credentials"}, status=400)
 
         return Response({"error": "Invalid login request"}, status=400)
+
+ 
     
 class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated]

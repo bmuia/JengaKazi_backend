@@ -20,6 +20,10 @@ class JobListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsEmployer()]
         return [AllowAny()]
+    
+    def perform_create(self, serializer):
+        serializer.save(employer=self.request.user)
+
 
 
 class JobDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -81,4 +85,15 @@ class JobApplicantListView(generics.ListAPIView):
             job__id=job_id,
             job__employer=self.request.user
         ).order_by('-applied_at')
+    
+class EmployerJobListView(generics.ListAPIView):
+    """
+    Employers can view a list of their own job posts.
+    """
+    serializer_class = JobSerializer
+    permission_classes = [IsEmployer]
+
+    def get_queryset(self):
+        return JobPost.objects.filter(employer=self.request.user).order_by('-created_at')
+
 
